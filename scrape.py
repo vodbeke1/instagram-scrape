@@ -1,5 +1,6 @@
 import requests
 import pprint
+import os
 from selenium import webdriver
 from bs4 import BeautifulSoup as bs
 import time
@@ -8,15 +9,22 @@ from urllib.request import urlopen
 import json
 from pandas.io.json import json_normalize
 import pandas as pd, numpy as np
+from dotenv import load_dotenv
+
+from pathlib import Path
+env_path = Path(".") / "env/.env"
+load_dotenv(dotenv_path=env_path)
+
 
 tags = pd.read_csv("data/tags.csv")
 
-CHROME_DRIVER = r"C:\Users\Viktor\Documents\Projects\PersonalProjects\instagram-scrape\utils\chromedriver.exe"
+CHROME_DRIVER = os.getenv("CHROME_DRIVER")
 
 links = []
 tag_links = []
 counter = 0
 browser = webdriver.Chrome(executable_path=CHROME_DRIVER)
+
 for hashtag in tags["tag"].head(20):
     print(hashtag)
     
