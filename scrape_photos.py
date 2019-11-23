@@ -4,39 +4,49 @@ import numpy as np
 import json
 from bs4 import BeautifulSoup as bs
 from urllib.request import urlopen
+import pprint as pp
 
 
 def get_photo_info():
     data = pd.read_csv("data/tag_links.csv")
-    links = data["link"]
-    tag = data["tag"] 
-    result=pd.DataFrame()
-    tag_ = []
-
-    for i in range(len(links)):
+    result=[]
+    
+    for i in range(len(data)):
+        if i % 100 == 0:
+            print("{}%".format(round(i*100/len(data), 2)))
+        
         try:
-            page = urlopen(links[i]).read()
-            data = bs(page, 'html.parser')
-            script = data.find('body').find('script')
+            page = urlopen(data["link"][i]).read()
+            data_new = bs(page, 'html.parser')
+            script = data_new.find('body').find('script')
             raw = script.text.strip().replace('window._sharedData =', '').replace(';', '')
             json_data=json.loads(raw)
             posts =json_data['entry_data']['PostPage'][0]['graphql']
-            x = pd.DataFrame.from_dict(json_normalize(posts), orient='columns') 
-            x.columns =  x.columns.str.replace("shortcode_media.", "")
+            x = {"tag": data["tag"][i],
+                "url": posts['shortcode_media']['display_resources'][0]['src'],
+                "height": posts['shortcode_media']['dimensions']['height'],
+                "width": posts['shortcode_media']['dimensions']['width'],
+                "config_height": posts['shortcode_media']['display_resources'][0]['config_height'],
+                "config_width": posts['shortcode_media']['display_resources'][0]['config_width'],
+                }
+            try:
+                x["related_words"] = posts['shortcode_media']['accessibility_caption']
+            except:
+                x["related_words"] = None
+            
             result.append(x)
-            tag_.append(tag[i])
-            print("Success")
-
-        except:
+            
+        
+        except Exception as e:
             print("Failed")
-    result["tag"] = tag_
-
-    # Just check for the duplicates
-    result = result.drop_duplicates(subset = 'shortcode')
-    result.index = range(len(result.index))
-    return result
+            print(e)
+            
+        
+    
+    return pd.DataFrame(result)
 
 if __name__ == "__main__":
     photo_data = get_photo_info()
     print(len(photo_data))
+    print("Finished")
     photo_data.to_csv("data/photo_info.csv")

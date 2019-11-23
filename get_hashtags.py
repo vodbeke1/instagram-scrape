@@ -16,4 +16,3 @@ for i in links:
         tags.append(word)
 
 pd.DataFrame({"tag": tags}).to_csv("data/tags.csv")
- 
